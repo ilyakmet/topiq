@@ -1,4 +1,4 @@
-Alpha VK Parser
+Alpha VK Parser (Python 2.7.12)
 
 1)Install requests (in terminal: pip install requests).
 2)Run test.py
