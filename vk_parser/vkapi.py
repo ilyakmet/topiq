@@ -29,7 +29,9 @@ def create_api_url(method, parameters={}):
 #create request by url
 def get_request(url):
 	try:
-		return requests.get(url, proxies={'http':get_random_proxy()}).json()
+		random_proxy = get_random_proxy()
+		#print(random_proxy)
+		return requests.get(url, proxies={'http':random_proxy}).json()
 	except:
 		print('get_request error')
 		return None
