@@ -44,28 +44,29 @@ def vkapi_method(method, parameters={}):
 		print('vkapi_method error')
 		return None
 
-#get part of users in group
-def groups_getMembers(groupid, offset):
+#https://vk.com/dev/groups.getMembers
+def groups_getMembers(groupid='', offset=0, sort='', count='', fields='', filter_=''):
 	try:
 		print(offset)
 		f = open(DIR + groupid + '_usersdata.txt', 'a')
-		for i in vkapi_method('groups.getMembers', {'group_id':groupid, 'offset': offset, 'count':1000})['users']:
+		res = vkapi_method('groups.getMembers', {'group_id':groupid, 'offset': offset, 'count':count, 'sort':sort, 'fields':fields, 'filter':filter_})
+		for i in res['users']:
 			f.write(str(i) + '\n')
 		f.close()
-		return 'susccess'
+		return res['count']
 	except:
 		print('groups_getMembers error')
 		return None
 
-#get list of groups by substring
-def groups_search(substring, access_token, filename='', grouptype='', countryid='', cityid='', future='', market='', sort=0, count=10):
+#https://vk.com/dev/groups.search
+def groups_search(q, access_token, filename='', type_='', country_id='', city_id='', future='', market='', offset=0, sort=0, count=''):
 	try:
 		if filename == '':
-			fname = substring
+			fname = q
 		else:
 			fname = filename
 		f = open(DIR + fname + '.txt', 'a')
-		for i in vkapi_method('groups.search', {'access_token':access_token, 'q':substring, 'type':grouptype, 'country_id':countryid, 'ciy_id':cityid, 'future':future, 'market':market, 'sort':sort, 'count':count})[1:]:
+		for i in vkapi_method('groups.search', {'access_token':access_token, 'q':q, 'type':type_, 'country_id':country_id, 'ciy_id':city_id, 'future':future, 'market':market, 'sort':sort, 'count':count, 'offset':offset})[1:]:
 			#print(i['gid'])
 			f.write(str(i['gid']) + '\n')
 		f.close()
@@ -73,7 +74,22 @@ def groups_search(substring, access_token, filename='', grouptype='', countryid=
 	except:
 		print('groups_search error')
 		return None
-
+		
+#https://vk.com/dev/wall.get
+def wall_get(access_token='', owner_id='', domain='', count='', extended='', fields='', offset=0, filter_='owner', likes=None, reposts=None, comments=None):
+	try:
+		print(offset)
+		filename = max(owner_id, domain)
+		f = open(DIR + filename + '_posts.txt', 'a')
+		res = vkapi_method('wall.get', {'owner_id':owner_id, 'domain':domain, 'count':count, 'extended':extended, 'fields':fields, 'offset':offset, 'filter':filter_, 'access_token':access_token})
+		for i in res[1:]:
+			if i['likes']['count'] >= likes and i['reposts']['count'] >= reposts and i['comments']['count'] >= comments:
+				f.write(str(i['likes']['count']) + ',' + str(i['id']) + ',' + str(i['date']) + '\n')
+		f.close()
+		return res[0]
+	except:
+		print('wall_get error')
+		return None
 
 
 #===========================================================================================================MAIN FUNCTIONS
@@ -81,19 +97,13 @@ def groups_search(substring, access_token, filename='', grouptype='', countryid=
 def get_users_list_by_groupid(groupid):
 	try:
 		#in first step get 1000 users id and count of group (border)
-		f = open(DIR + groupid + '_usersdata.txt', 'w')
-		res = vkapi_method('groups.getMembers', {'group_id':groupid, 'offset': 0, 'count':1000})
-		for i in res['users']:
-			f.write(str(i) + '\n')
-		f.close()
-		border  = res['count']
+		open(DIR + groupid + '_usersdata.txt', 'w')
+		border = groups_getMembers(groupid)
 		print('Group count:' + str(border))
-
 		#ThreadPool model
 		offsets = [(groupid, x) for x in range(1000, border+1, 1000)]
 		def groups_getMembers_local(groupid_offset):
 			return groups_getMembers(*groupid_offset)
-			
 		pool = ThreadPool(pool_number)
 		pool.map(groups_getMembers_local, offsets)
 		return 'susccess'
@@ -101,19 +111,42 @@ def get_users_list_by_groupid(groupid):
 		print('get_users_list_by_groupid error')
 		return None
 		
-#get group list by substrings and parameters
-def get_groups_list(substrings, access_token, filename='', grouptype='', countryid='', cityid='', future='', market='', sort=0, count=10):
+#get groups list by substrings and parameters
+def get_groups_list_by_substrings(q, access_token, filename='', type_='', country_id='', city_id='', future='', market='', offset=0, sort=0, count=''):
 	try:
-		fname = substrings[:50]
+		fname = q[:50]
 		open(DIR + fname + '.txt', 'w')
-		substrings_list = substrings.split(',')
+		substrings_list = q.split(',')
 		for string in substrings_list:
 			print(string)
-			groups_search(string, access_token, fname, grouptype, countryid, cityid, future, market, sort, count)
+			groups_search(string, access_token, fname, type_, country_id, city_id, future, market, offset, sort, count)
 		return 'susccess'
 	except:
 		print('get_groups_list error')
 		return None
+
+#get posts list by group and parameters
+def get_page_posts(access_token='', owner_id='', domain='', count='', extended='', fields='', offset=0, filter_='owner', likes=None, reposts=None, comments=None):
+	try:
+		filename = max(owner_id, domain)
+		open(DIR + filename + '_posts.txt', 'w')
+		border = wall_get(access_token, owner_id, domain, count, extended, fields, offset, filter_, likes, reposts, comments)
+		print(border)
+		#ThreadPool model
+		offsets = [(access_token, owner_id, domain, count, extended, fields, offset, filter_, likes, reposts, comments) for offset in range(100, border+1, 100)]
+		def wall_get_local(parameters):
+				return wall_get(*parameters)
+		pool = ThreadPool(pool_number)
+		pool.map(wall_get_local, offsets)
+		return 'susccess'
+	except:
+		print('get_page_posts error')
+		return None
+
+
+
+
+		
 
 
 
