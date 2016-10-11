@@ -4,7 +4,7 @@ import vkapi, os
 DIR = os.path.abspath(os.curdir) + '/'
 
 #generate your own access_token: https://habrahabr.ru/post/213163/
-token = '0b857507f6fe8a67c01ef4f51c9b4085077eb225e4bb6cda064705ecfa1d97a7d6d38c347222e1887d6d3'#token here
+token = ''#token here
 
 if __name__ == "__main__":
 
