@@ -45,7 +45,7 @@ def vkapi_method(method, parameters={}):
 		return None
 
 #https://vk.com/dev/groups.getMembers
-def groups_getMembers(groupid='', offset=0, sort='', count='', fields='', filter_=''):
+def groups_getMembers(groupid='', offset=0, sort='', count=1000, fields='', filter_=''):
 	try:
 		print(offset)
 		f = open(DIR + groupid + '_usersdata.txt', 'a')
@@ -59,7 +59,7 @@ def groups_getMembers(groupid='', offset=0, sort='', count='', fields='', filter
 		return None
 
 #https://vk.com/dev/groups.search
-def groups_search(q, access_token, filename='', type_='', country_id='', city_id='', future='', market='', offset=0, sort=0, count=''):
+def groups_search(q, access_token, filename='', type_='', country_id='', city_id='', future='', market='', offset=0, sort=0, count=1000):
 	try:
 		if filename == '':
 			fname = q
@@ -76,7 +76,7 @@ def groups_search(q, access_token, filename='', type_='', country_id='', city_id
 		return None
 		
 #https://vk.com/dev/wall.get
-def wall_get(access_token='', owner_id='', domain='', count='', extended='', fields='', offset=0, filter_='owner', likes=None, reposts=None, comments=None):
+def wall_get(access_token='', owner_id='', domain='', count=1000, extended='', fields='', offset=0, filter_='owner', likes=None, reposts=None, comments=None):
 	try:
 		print(offset)
 		filename = max(owner_id, domain)
@@ -90,6 +90,8 @@ def wall_get(access_token='', owner_id='', domain='', count='', extended='', fie
 	except:
 		print('wall_get error')
 		return None
+
+
 
 
 #===========================================================================================================MAIN FUNCTIONS
@@ -138,7 +140,7 @@ def get_page_posts(access_token='', owner_id='', domain='', count='', extended='
 				return wall_get(*parameters)
 		pool = ThreadPool(pool_number)
 		pool.map(wall_get_local, offsets)
-		return 'susccess'
+		return 'susccess', border
 	except:
 		print('get_page_posts error')
 		return None
